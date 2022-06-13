@@ -1,0 +1,36 @@
+##Script by Ana Larissa Freitas
+##RStudio version: R-4.1.0-win
+##Date: 13/06/2022
+
+library(dplyr)
+library(glue)
+library(rgdal)
+
+setwd("C:/diretório")
+
+#importe o arquivo shapefile
+shp <- readOGR(dsn = "diretorio", layer = "nome do arquivo", verbose = FALSE, stringsAsFactors = FALSE)
+
+#escrever um data.frame
+df = slot(object = shp, name = "data")
+
+#opcional para filtrar atributos específicos !!!É necessário manter os atributos com as coordenadas!!!
+#simpleDF = df %>% select(Atributos, Separar, Por, Vírgula)
+
+#lista com valores únicos do atributo, aqui, foi utilizado o arquivo com menos atributos
+uniq = unique(simpleDF$Atributos)
+
+for (i in 1:length(uniq)) {
+    #aplica os critérios dispostos na lista do loop para filtrar
+    fil = dplyr::filter(simpleDF, Atributos == as.character(uniq[i]))
+    
+    #atribuir as coordenadas com a nomenclatura que tiver no data.frame, irá converter o df em SpatialPointsDataFrame
+    coordinates(fil)=~LONGITUDE+LATITUDE
+    #definir a projeção, buscar no dado de entrada através: shp_entrada@proj4string@projargs
+    proj4string(fil)= CRS("+proj=longlat +datum=WGS84 +no_defs")
+    
+    #escreve o filtro na pasta de destino, o nome recebe o valor na posição, salvo em shapefile, e permite sobrescrever os nomes
+    writeOGR(fil, "diretório", glue(uniq[i]), driver = "ESRI Shapefile", overwrite_layer = TRUE)
+}
+
+###Fim do Código###
